@@ -115,7 +115,7 @@ export default function GamesList() {
             Notes
             <input type="text" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </label>
-          {error && <p style={{ color: '#b3261e' }}>{error}</p>}
+          {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
           <button type="submit">Create Game</button>
         </form>
       </section>
@@ -134,7 +134,7 @@ export default function GamesList() {
                 <td>{game.formation_name}</td>
                 <td>{game.num_quarters}</td>
                 <td>
-                  <Link to={`/games/${game.id}`}>Open</Link>{' '}
+                  <Link to={`/games/${game.id}`} className="btn">Open</Link>{' '}
                   <button type="button" data-action="delete" onClick={() => handleDelete(game)}>Delete</button>
                 </td>
               </tr>

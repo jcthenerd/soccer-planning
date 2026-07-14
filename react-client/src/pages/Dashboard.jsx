@@ -63,7 +63,7 @@ export default function Dashboard() {
                 <td>{g.date}</td>
                 <td>{g.opponent ?? ''}</td>
                 <td>{g.formation_name}</td>
-                <td><Link to={`/games/${g.id}`}>Open</Link></td>
+                <td><Link to={`/games/${g.id}`} className="btn">Open</Link></td>
               </tr>
             ))}
           </tbody>

@@ -25,11 +25,14 @@ export default function App() {
   return (
     <div className="page">
       <nav className="topnav">
-        {NAV_ITEMS.map((item) => (
-          <Link key={item.to} to={item.to} className={isActive(pathname, item.to) ? 'active' : ''}>
-            {item.label}
-          </Link>
-        ))}
+        <Link to="/" className="brand">⚽ Soccer Planner</Link>
+        <div className="topnav-links">
+          {NAV_ITEMS.map((item) => (
+            <Link key={item.to} to={item.to} className={isActive(pathname, item.to) ? 'active' : ''}>
+              {item.label}
+            </Link>
+          ))}
+        </div>
       </nav>
       <Routes>
         <Route path="/" element={<Dashboard />} />

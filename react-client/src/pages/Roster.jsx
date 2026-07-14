@@ -165,7 +165,12 @@ export default function Roster() {
                 <td>{player.notes ?? ''}</td>
                 <td>
                   <button type="button" data-action="edit" onClick={() => startEdit(player)}>Edit</button>
-                  <button type="button" data-action="toggle-active" onClick={() => handleToggleActive(player)}>
+                  <button
+                    type="button"
+                    data-action="toggle-active"
+                    className={player.active ? 'danger' : undefined}
+                    onClick={() => handleToggleActive(player)}
+                  >
                     {player.active ? 'Deactivate' : 'Activate'}
                   </button>
                 </td>
