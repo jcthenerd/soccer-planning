@@ -16,6 +16,7 @@ function serializeGame(row) {
     formation_id: row.formation_id,
     num_quarters: row.num_quarters,
     notes: row.notes,
+    opponent_goals: row.opponent_goals,
   };
 }
 
@@ -28,7 +29,7 @@ function getGameDetail(gameId) {
   if (!game) return null;
 
   const attendance = db.prepare(`
-    SELECT ga.player_id, p.name, p.jersey_number, ga.available
+    SELECT ga.player_id, p.name, p.jersey_number, ga.available, ga.goals
     FROM game_attendance ga JOIN players p ON p.id = ga.player_id
     WHERE ga.game_id = ?
     ORDER BY p.name
@@ -52,6 +53,7 @@ function getGameDetail(gameId) {
       name: a.name,
       jersey_number: a.jersey_number,
       available: !!a.available,
+      goals: a.goals,
     })),
     quarters: quarters.map((q) => ({ id: q.id, quarter_number: q.quarter_number })),
     assignments: assignments.map((a) => ({
@@ -168,7 +170,7 @@ router.get('/:id/attendance', (req, res) => {
   const existing = db.prepare('SELECT id FROM games WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Game not found' });
   const attendance = db.prepare(`
-    SELECT ga.player_id, p.name, p.jersey_number, ga.available
+    SELECT ga.player_id, p.name, p.jersey_number, ga.available, ga.goals
     FROM game_attendance ga JOIN players p ON p.id = ga.player_id
     WHERE ga.game_id = ?
     ORDER BY p.name
@@ -196,6 +198,37 @@ router.put('/:id/attendance', (req, res) => {
   });
 
   res.json(getGameDetail(existing.id).attendance);
+});
+
+router.put('/:id/goals', (req, res) => {
+  const existing = db.prepare('SELECT id FROM games WHERE id = ?').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Game not found' });
+  const { goals, opponent_goals } = req.body || {};
+  if (!Array.isArray(goals)) {
+    return res.status(400).json({ error: 'goals array is required' });
+  }
+  for (const entry of goals) {
+    if (!Number.isInteger(entry.goals) || entry.goals < 0) {
+      return res.status(400).json({ error: 'each entry needs a non-negative integer goals count' });
+    }
+  }
+  if (opponent_goals !== null && opponent_goals !== undefined) {
+    if (!Number.isInteger(opponent_goals) || opponent_goals < 0) {
+      return res.status(400).json({ error: 'opponent_goals must be a non-negative integer or null' });
+    }
+  }
+
+  transaction(() => {
+    const update = db.prepare('UPDATE game_attendance SET goals = ? WHERE game_id = ? AND player_id = ?');
+    for (const entry of goals) {
+      update.run(entry.goals, existing.id, entry.player_id);
+    }
+    if (opponent_goals !== undefined) {
+      db.prepare('UPDATE games SET opponent_goals = ? WHERE id = ?').run(opponent_goals, existing.id);
+    }
+  });
+
+  res.json(getGameDetail(existing.id));
 });
 
 function getFormationSlots(formationId) {

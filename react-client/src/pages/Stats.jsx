@@ -57,6 +57,99 @@ function Playtime({ seasonId }) {
   );
 }
 
+function Goals({ seasonId }) {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    setData(null);
+    api.get(`/api/stats/goals?season_id=${seasonId}`).then(setData);
+  }, [seasonId]);
+
+  if (data === null) return <p><em>Loading&hellip;</em></p>;
+  if (!data.length) return <p><em>No players yet this season.</em></p>;
+
+  const maxGoals = Math.max(1, ...data.map((row) => row.goals));
+
+  return (
+    <div>
+      {data.map((row) => (
+        <div className="stat-row" key={row.player_id}>
+          <div className="stat-label" title={row.name}>{row.name}</div>
+          <div className="stat-track"><div className="stat-fill" style={{ width: `${(row.goals / maxGoals) * 100}%` }} /></div>
+          <div className="stat-value">{row.goals} goal{row.goals === 1 ? '' : 's'}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const RESULT_COLORS = { win: 'var(--accent)', loss: 'var(--danger)', tie: 'var(--text-muted)' };
+
+function Results({ seasonId }) {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    setData(null);
+    api.get(`/api/stats/results?season_id=${seasonId}`).then(setData);
+  }, [seasonId]);
+
+  if (data === null) return <p><em>Loading&hellip;</em></p>;
+  const { wins, losses, ties, games } = data;
+  const total = wins + losses + ties;
+  if (total === 0) {
+    return <p><em>No results recorded yet &mdash; enter the opponent&rsquo;s goals on a game to track it here.</em></p>;
+  }
+
+  const segments = [
+    { key: 'win', label: 'Win', count: wins },
+    { key: 'loss', label: 'Loss', count: losses },
+    { key: 'tie', label: 'Tie', count: ties },
+  ];
+
+  return (
+    <>
+      <div className="position-legend">
+        {segments.map((s) => (
+          <span key={s.key}>
+            <span className="swatch" style={{ background: RESULT_COLORS[s.key] }} />
+            {s.label} ({s.count})
+          </span>
+        ))}
+      </div>
+      <div className="stack-track" style={{ height: 28, marginBottom: 10 }}>
+        {segments.map((s) => s.count === 0 ? null : (
+          <div
+            key={s.key}
+            className="stack-segment"
+            title={`${s.label}: ${s.count}`}
+            style={{ width: `${(s.count / total) * 100}%`, background: RESULT_COLORS[s.key] }}
+          />
+        ))}
+      </div>
+      <p style={{ color: 'var(--text-secondary)' }}>
+        Record: {wins}&ndash;{losses}&ndash;{ties} (W&ndash;L&ndash;T) across {total} game{total === 1 ? '' : 's'}
+      </p>
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Opponent</th><th>Score</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          {games.map((g) => (
+            <tr key={g.game_id}>
+              <td>{g.date}</td>
+              <td>{g.opponent ?? ''}</td>
+              <td>{g.our_goals} &ndash; {g.opponent_goals}</td>
+              <td style={{ color: RESULT_COLORS[g.result], fontWeight: 600 }}>
+                {g.result === 'win' ? 'Win' : g.result === 'loss' ? 'Loss' : 'Tie'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
 function Positions({ seasonId }) {
   const [data, setData] = useState(null);
   const [positions, setPositions] = useState([]);
@@ -201,6 +294,18 @@ export default function Stats() {
             <h2>Playtime</h2>
             <p>Share of available quarters each player has actually played this season.</p>
             <Playtime seasonId={seasonId} />
+          </section>
+
+          <section className="card">
+            <h2>Results</h2>
+            <p>Wins, losses, and ties this season.</p>
+            <Results seasonId={seasonId} />
+          </section>
+
+          <section className="card">
+            <h2>Goals</h2>
+            <p>Total goals scored by each player this season.</p>
+            <Goals seasonId={seasonId} />
           </section>
 
           <section className="card">

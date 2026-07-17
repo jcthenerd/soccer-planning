@@ -1,7 +1,13 @@
 # Soccer Planner
 
-Tracks playtime, positions, and pairings for a youth soccer team, and generates
-fair lineup plans for upcoming games.
+Tracks playtime, positions, goals, and pairings for a youth soccer team, and
+generates fair lineup plans for upcoming games.
+
+This is a personal project for coaching an AYSO team - not a general product.
+It was vibe coded with Claude: built and iterated on almost entirely through
+conversation rather than hand-written, so expect the usual tradeoffs that
+come with that (pragmatic scope, light on tests, tuned for one team's
+workflow rather than configurability).
 
 ## Run it
 
@@ -41,13 +47,17 @@ rebuild-per-change loop.
    positions/formations to grow into 11v11 later.
 3. **Games** - schedule a game, mark who's available, then **Generate Plan**
    to get a fair per-quarter lineup. Edit any cell (it swaps players to keep
-   every quarter valid) and **Save Plan** when happy.
-4. **Stats** - season playtime %, position variety, and a pairing-rate matrix
-   showing who's played together most/least.
+   every quarter valid) and **Save Plan** when happy. Under **Goals**, record
+   each player's goals plus the opponent's final goal count.
+4. **Stats** - season playtime %, win/loss/tie record, goals scored, position
+   variety, and a pairing-rate matrix showing who's played together most/least.
 
 The plan generator balances playtime deficits, pairing variety, and bench
 streaks using season-to-date history; it only "knows about" games whose plan
 has actually been saved, so scheduled-but-unplanned games don't skew stats.
+Goals and results are independent of this and count for every game in the
+season, saved plan or not - a game only counts toward the win/loss/tie record
+once the opponent's goals have been entered.
 
 ## Known limitations (v1)
 

@@ -34,6 +34,65 @@ router.get('/playtime', (req, res) => {
   res.json(result);
 });
 
+router.get('/goals', (req, res) => {
+  const seasonId = req.query.season_id;
+  if (!seasonId) return res.status(400).json({ error: 'season_id is required' });
+
+  const rows = db.prepare(`
+    SELECT ga.player_id, SUM(ga.goals) AS goals
+    FROM game_attendance ga
+    JOIN games g ON g.id = ga.game_id
+    WHERE g.season_id = ?
+    GROUP BY ga.player_id
+  `).all(Number(seasonId));
+  const goalsByPlayer = new Map(rows.map((r) => [r.player_id, r.goals]));
+
+  const players = db.prepare('SELECT id, name, jersey_number, active FROM players').all();
+  const result = players
+    .filter((p) => p.active || goalsByPlayer.has(p.id))
+    .map((p) => ({
+      player_id: p.id,
+      name: p.name,
+      jersey_number: p.jersey_number,
+      goals: goalsByPlayer.get(p.id) || 0,
+    }))
+    .sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name));
+
+  res.json(result);
+});
+
+router.get('/results', (req, res) => {
+  const seasonId = req.query.season_id;
+  if (!seasonId) return res.status(400).json({ error: 'season_id is required' });
+
+  const rows = db.prepare(`
+    SELECT g.id, g.date, g.opponent, g.opponent_goals, COALESCE(SUM(ga.goals), 0) AS our_goals
+    FROM games g
+    LEFT JOIN game_attendance ga ON ga.game_id = g.id
+    WHERE g.season_id = ? AND g.opponent_goals IS NOT NULL
+    GROUP BY g.id
+    ORDER BY g.date, g.id
+  `).all(Number(seasonId));
+
+  let wins = 0, losses = 0, ties = 0;
+  const games = rows.map((r) => {
+    const result = r.our_goals > r.opponent_goals ? 'win' : r.our_goals < r.opponent_goals ? 'loss' : 'tie';
+    if (result === 'win') wins++;
+    else if (result === 'loss') losses++;
+    else ties++;
+    return {
+      game_id: r.id,
+      date: r.date,
+      opponent: r.opponent,
+      our_goals: r.our_goals,
+      opponent_goals: r.opponent_goals,
+      result,
+    };
+  });
+
+  res.json({ wins, losses, ties, games });
+});
+
 router.get('/pairings', (req, res) => {
   const seasonId = req.query.season_id;
   if (!seasonId) return res.status(400).json({ error: 'season_id is required' });

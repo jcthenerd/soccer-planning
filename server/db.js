@@ -117,7 +117,20 @@ function seed() {
     .run(`${year} Season`, year);
 }
 
+function migrate() {
+  const attendanceColumns = db.prepare("PRAGMA table_info(game_attendance)").all();
+  if (!attendanceColumns.some((c) => c.name === 'goals')) {
+    db.exec('ALTER TABLE game_attendance ADD COLUMN goals INTEGER NOT NULL DEFAULT 0');
+  }
+
+  const gameColumns = db.prepare("PRAGMA table_info(games)").all();
+  if (!gameColumns.some((c) => c.name === 'opponent_goals')) {
+    db.exec('ALTER TABLE games ADD COLUMN opponent_goals INTEGER');
+  }
+}
+
 seed();
+migrate();
 
 function transaction(fn) {
   db.exec('BEGIN');

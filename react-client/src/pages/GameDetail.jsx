@@ -22,11 +22,15 @@ export default function GameDetail() {
   const [positionsList, setPositionsList] = useState([]);
   const [editablePlan, setEditablePlan] = useState(null);
   const [attendanceDraft, setAttendanceDraft] = useState({});
+  const [goalsDraft, setGoalsDraft] = useState({});
+  const [opponentGoalsDraft, setOpponentGoalsDraft] = useState('');
 
   const loadGame = useCallback(async () => {
     const data = await api.get(`/api/games/${gameId}`);
     setGameData(data);
     setAttendanceDraft(Object.fromEntries(data.attendance.map((a) => [a.player_id, a.available])));
+    setGoalsDraft(Object.fromEntries(data.attendance.map((a) => [a.player_id, a.goals])));
+    setOpponentGoalsDraft(data.opponent_goals == null ? '' : String(data.opponent_goals));
     setEditablePlan(buildEditablePlanFromSaved(data));
   }, [gameId]);
 
@@ -47,6 +51,17 @@ export default function GameDetail() {
     const attendance = gameData.attendance.map((a) => ({ player_id: a.player_id, available: !!attendanceDraft[a.player_id] }));
     await api.put(`/api/games/${gameId}/attendance`, { attendance });
     await loadGame();
+  }
+
+  async function handleSaveGoals() {
+    const goals = gameData.attendance.map((a) => ({ player_id: a.player_id, goals: Number(goalsDraft[a.player_id]) || 0 }));
+    const opponent_goals = opponentGoalsDraft === '' ? null : Number(opponentGoalsDraft);
+    try {
+      await api.put(`/api/games/${gameId}/goals`, { goals, opponent_goals });
+      await loadGame();
+    } catch (err) {
+      alert(err.message);
+    }
   }
 
   async function handleGeneratePlan() {
@@ -138,6 +153,43 @@ export default function GameDetail() {
           ))}
         </div>
         <button type="button" onClick={handleSaveAttendance}>Save Attendance</button>
+      </section>
+
+      <section className="card">
+        <h2>Goals</h2>
+        <p>How many goals did each player score in this game?</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, maxWidth: 320 }}>
+          <label style={{ flex: 1 }}>Opponent&rsquo;s goals</label>
+          <input
+            type="number"
+            min="0"
+            style={{ width: '4.5em' }}
+            value={opponentGoalsDraft}
+            onChange={(e) => setOpponentGoalsDraft(e.target.value)}
+          />
+        </div>
+        {opponentGoalsDraft !== '' && (
+          <p style={{ color: 'var(--text-secondary)' }}>
+            Final score: {Object.values(goalsDraft).reduce((sum, v) => sum + (Number(v) || 0), 0)} &ndash; {opponentGoalsDraft}
+          </p>
+        )}
+        <div>
+          {gameData.attendance.map((a) => (
+            <div key={a.player_id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, maxWidth: 320 }}>
+              <label style={{ flex: 1 }}>
+                {a.name}{a.jersey_number != null ? ` (#${a.jersey_number})` : ''}
+              </label>
+              <input
+                type="number"
+                min="0"
+                style={{ width: '4.5em' }}
+                value={goalsDraft[a.player_id] ?? 0}
+                onChange={(e) => setGoalsDraft({ ...goalsDraft, [a.player_id]: e.target.value })}
+              />
+            </div>
+          ))}
+        </div>
+        <button type="button" onClick={handleSaveGoals}>Save Goals</button>
       </section>
 
       <section className="card">
