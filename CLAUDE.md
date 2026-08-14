@@ -12,13 +12,17 @@ generating fair per-quarter lineup plans for games.
 
 ```
 npm install
-npm run build   # builds react-client/ into react-client/dist (required before npm start serves anything)
-npm start       # node server/index.js, serves the API and the built frontend on :3000
-npm test        # node --test server/lib/*.test.js
+npm run build     # builds react-client/ into react-client/dist (required before npm start/npm run electron serve anything)
+npm start         # node server/index.js, serves the API and the built frontend on :3000
+npm test          # node --test server/lib/*.test.js
+npm run electron  # runs the built app in an Electron window instead of a browser tab
+npm run dist      # npm run build, then electron-builder --publish never -> installers in release/
 ```
 
 Run a single backend test file directly: `node --test server/lib/planGenerator.test.js`.
-There is no frontend test suite.
+There is no frontend test suite. See [CONTRIBUTING.md](CONTRIBUTING.md) for
+the fuller human-facing rundown of these same commands (install-from-release
+instructions live in `README.md` instead).
 
 For frontend-only iteration, `npm run dev` inside `react-client/` runs a Vite
 dev server on :5173 that proxies `/api` to :3000 (the Express server must
@@ -39,7 +43,33 @@ and falls back to `react-client/dist/index.html` for every other GET path (an
 SPA catch-all - see the bottom of `server/index.js`), so client-side routes
 work on a hard refresh. The frontend calls the API with plain relative
 `fetch` (`react-client/src/api.js`), so both pieces are always same-origin;
-there's no separate API base URL to configure.
+there's no separate API base URL to configure. `server/index.js` exports the
+Express `app` and only calls `app.listen()` when run directly (`require.main
+=== module`), so the same module can be `require()`-d by Electron's main
+process without double-binding a port.
+
+**Desktop packaging (Electron).** `package.json`'s `main` points at
+`electron/main.js`, which requires `server/index.js` directly (no child
+process/IPC - same-origin `fetch` calls work unmodified) and points a
+`BrowserWindow` at `http://localhost:<port>` once the server is listening
+(falls back to an OS-assigned port on `EADDRINUSE`, e.g. when a dev `npm
+start` is already running on :3000). `server/db.js` resolves its SQLite path
+from `SOCCER_DB_PATH` (falling back to the repo-relative `data/soccer.db`
+default used by `npm start`/`npm test`), and `electron/main.js` sets that env
+var to a path under `app.getPath('userData')` before requiring the server,
+one-time-migrating any existing `data/soccer.db*` files there on first
+launch. `npm run dist` (electron-builder, config under `package.json`'s
+`build` key) produces installers in `release/` using icons generated from
+`build/icon-source.svg` into `build/icon.{icns,ico,png}`. electron-builder's
+own code signing is skipped in CI (`CSC_IDENTITY_AUTO_DISCOVERY=false`,
+since there's no paid Developer ID certificate), which leaves the macOS app
+bundle's original linker-signed state in place - invalid once resources
+(asar, icon) are added afterward. `build/afterPack.js` (wired via the
+`afterPack` build hook) re-signs the fully assembled `.app` ad hoc after
+packaging so its resource seal is valid; without it, macOS reports the app
+as "damaged" rather than merely unsigned. Getting to a fully trusted/notarized
+build would need a real Developer ID certificate and notarization
+credentials wired into both `package.json` and CI secrets - not set up.
 
 **Database and migrations.** `server/db.js` opens the single SQLite
 connection (WAL mode, foreign keys on), owns the full schema via
