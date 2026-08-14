@@ -28,6 +28,7 @@
     "directories": {
       "output": "release"
     },
+    "afterPack": "build/afterPack.js",
     "files": [
       "electron/**",
       "server/**",
@@ -37,14 +38,17 @@
     ],
     "mac": {
       "target": ["dmg", "zip"],
-      "category": "public.app-category.sports"
+      "category": "public.app-category.sports",
+      "icon": "build/icon.icns"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icon.ico"
     },
     "linux": {
       "target": "AppImage",
-      "category": "Sports"
+      "category": "Sports",
+      "icon": "build/icon.png"
     }
   }
 }
