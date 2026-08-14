@@ -49,12 +49,22 @@ framework: schema changes to *existing* tables are hand-rolled in the
 `migrate()` function (checks `PRAGMA table_info` and runs `ALTER TABLE` if a
 column is missing) - follow that pattern for new columns rather than editing
 the `CREATE TABLE` statement alone, since that only affects fresh databases.
-`seed()` populates default positions/formation/season the first time
-`positions` is empty.
+`seed()` creates the initial season the first time `seasons` is empty.
+Positions and formations are *not* auto-seeded - a fresh install has none
+until the user applies an age-group preset (or builds their own) via
+`/api/setup`, which is what the frontend's first-run onboarding screen
+(`react-client/src/pages/Onboarding.jsx`) drives. `GET /api/setup/status`
+reports `needsSetup: true` whenever `positions` is empty, which is how the
+frontend decides whether to show onboarding instead of the normal app.
+`server/lib/formationPresets.js` holds the age-group catalog (U8/U10/U12
+etc.) as plain data, shared by `/api/setup` (applying a preset) and the
+`GET /api/setup/presets` response (listing them) - add new age groups or
+formations there rather than inlining them in the route.
 
 **Route modules mirror resources**, one file per table-ish concept under
 `server/routes/` (`players`, `positions`, `formations`, `seasons`, `games`,
-`stats`), each a plain `express.Router()` mounted in `server/index.js`. Write
+`stats`, `setup`), each a plain `express.Router()` mounted in
+`server/index.js`. Write
 routes generally: validate input, run the mutation(s) inside `transaction()`,
 then re-fetch and return the canonical serialized shape (see `getGameDetail`
 in `games.js`) rather than trusting the request body echoed back. The generic

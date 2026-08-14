@@ -12,6 +12,7 @@ const formationsRouter = require('./routes/formations');
 const seasonsRouter = require('./routes/seasons');
 const gamesRouter = require('./routes/games');
 const statsRouter = require('./routes/stats');
+const setupRouter = require('./routes/setup');
 
 const app = express();
 app.use(express.json());
@@ -22,6 +23,7 @@ app.use('/api/formations', formationsRouter);
 app.use('/api/seasons', seasonsRouter);
 app.use('/api/games', gamesRouter);
 app.use('/api/stats', statsRouter);
+app.use('/api/setup', setupRouter);
 
 // React app build. Run `npm run build` (root or react-client/) to
 // (re)generate dist/ after changing react-client/src.

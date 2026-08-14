@@ -1,10 +1,13 @@
+import { useEffect, useState } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { api } from './api.js';
 import Dashboard from './pages/Dashboard.jsx';
 import Roster from './pages/Roster.jsx';
 import Settings from './pages/Settings.jsx';
 import GamesList from './pages/GamesList.jsx';
 import GameDetail from './pages/GameDetail.jsx';
 import Stats from './pages/Stats.jsx';
+import Onboarding from './pages/Onboarding.jsx';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard' },
@@ -21,6 +24,14 @@ function isActive(pathname, to) {
 
 export default function App() {
   const { pathname } = useLocation();
+  const [needsSetup, setNeedsSetup] = useState(null);
+
+  useEffect(() => {
+    api.get('/api/setup/status').then((status) => setNeedsSetup(status.needsSetup));
+  }, []);
+
+  if (needsSetup === null) return null;
+  if (needsSetup) return <Onboarding onComplete={() => setNeedsSetup(false)} />;
 
   return (
     <div className="page">

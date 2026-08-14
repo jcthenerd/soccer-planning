@@ -202,7 +202,50 @@ function PositionsSection({ positions, onChange }) {
 
 const EMPTY_SLOT = () => ({ position_id: '', count: 1, drop_priority: '' });
 
-function FormationsSection({ positions }) {
+function PresetLoaderSection({ onApplied }) {
+  const [presets, setPresets] = useState([]);
+  const [ageGroup, setAgeGroup] = useState('');
+  const [applying, setApplying] = useState(false);
+
+  useEffect(() => {
+    api.get('/api/setup/presets').then((rows) => {
+      setPresets(rows);
+      setAgeGroup(rows[0]?.key ?? '');
+    });
+  }, []);
+
+  async function handleApply() {
+    if (!ageGroup) return;
+    setApplying(true);
+    try {
+      const result = await api.post('/api/setup/apply', { ageGroup });
+      if (result.formationsCreated === 0) {
+        alert('Those preset formations already exist.');
+      }
+      await onApplied();
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  if (!presets.length) return null;
+
+  return (
+    <div className="inline-form" style={{ marginBottom: '16px' }}>
+      <label>
+        Load age-group preset formations{' '}
+        <select value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)}>
+          {presets.map((group) => (
+            <option key={group.key} value={group.key}>{group.label} ({group.formatLabel})</option>
+          ))}
+        </select>
+      </label>
+      <button type="button" onClick={handleApply} disabled={applying}>Add formations</button>
+    </div>
+  );
+}
+
+function FormationsSection({ positions, onPositionsChange }) {
   const [formations, setFormations] = useState([]);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -265,6 +308,12 @@ function FormationsSection({ positions }) {
   return (
     <section className="card">
       <h2>Formations</h2>
+      <PresetLoaderSection
+        onApplied={async () => {
+          await loadFormations();
+          await onPositionsChange();
+        }}
+      />
       <div>
         {formations.map((formation) => (
           <div className="formation-card" key={formation.id}>
@@ -332,7 +381,7 @@ export default function Settings() {
       <SeasonsSection />
       <PositionsSection positions={positions} onChange={loadPositions} />
 
-      <FormationsSection positions={positions} />
+      <FormationsSection positions={positions} onPositionsChange={loadPositions} />
     </>
   );
 }

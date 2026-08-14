@@ -95,25 +95,12 @@ CREATE TABLE IF NOT EXISTS assignments (
 `);
 
 function seed() {
-  const { n: posCount } = db.prepare('SELECT COUNT(*) AS n FROM positions').get();
-  if (posCount > 0) return;
-
-  const insertPosition = db.prepare('INSERT INTO positions (name, sort_order) VALUES (?, ?)');
-  const gk = Number(insertPosition.run('Goalkeeper', 0).lastInsertRowid);
-  const def = Number(insertPosition.run('Defender', 1).lastInsertRowid);
-  const fwd = Number(insertPosition.run('Forward', 2).lastInsertRowid);
-
-  const formationId = Number(
-    db.prepare('INSERT INTO formations (name, description) VALUES (?, ?)')
-      .run('5v5 Standard', '1 Goalkeeper, 2 Defenders, 2 Forwards').lastInsertRowid
-  );
-
-  const insertSlot = db.prepare(
-    'INSERT INTO formation_slots (formation_id, position_id, count, drop_priority) VALUES (?, ?, ?, ?)'
-  );
-  insertSlot.run(formationId, gk, 1, null); // never drop the goalkeeper slot
-  insertSlot.run(formationId, def, 2, 2);
-  insertSlot.run(formationId, fwd, 2, 1); // drop a forward before a defender if short-handed
+  // Positions/formations are no longer auto-seeded here - a fresh install
+  // has none until the user picks an age-group preset (or builds their own)
+  // via /api/setup, so the frontend's onboarding flow has something to
+  // detect. Only the initial season is seeded unconditionally.
+  const { n: seasonCount } = db.prepare('SELECT COUNT(*) AS n FROM seasons').get();
+  if (seasonCount > 0) return;
 
   const year = new Date().getFullYear();
   db.prepare('INSERT INTO seasons (name, year, is_active) VALUES (?, ?, 1)')
