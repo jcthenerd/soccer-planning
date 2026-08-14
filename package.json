@@ -13,7 +13,7 @@
     "build": "npm --prefix react-client install && npm --prefix react-client run build",
     "test": "node --test server/lib/*.test.js",
     "electron": "electron .",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build && electron-builder --publish never"
   },
   "dependencies": {
     "express": "^4.19.2"
