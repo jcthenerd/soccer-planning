@@ -11,9 +11,35 @@ workflow rather than configurability).
 
 ## Run it
 
+As a desktop app (recommended day-to-day):
+
 ```
 npm install
-npm run build   # builds the React frontend (react-client/) into react-client/dist
+npm run build     # builds the React frontend into react-client/dist
+npm run electron  # opens the app in its own window
+```
+
+The first launch copies any existing `data/soccer.db` into the OS's
+per-user app-data directory (e.g. `~/Library/Application Support/Soccer
+Planner/soccer.db` on macOS) and uses that from then on - the app is no
+longer tied to this repo checkout once that one-time migration happens.
+
+To build an installable app (`.dmg`/`.zip` on macOS, `.exe` on Windows via
+NSIS, `.AppImage` on Linux):
+
+```
+npm run dist
+```
+
+Output lands in `release/`. Builds are unsigned, so on macOS the first
+launch needs a right-click -> Open to get past Gatekeeper. Windows builds
+from macOS require Wine to be installed locally.
+
+As a plain server (for local dev, or browser access):
+
+```
+npm install
+npm run build
 npm start
 ```
 

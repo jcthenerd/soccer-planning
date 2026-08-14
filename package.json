@@ -4,15 +4,47 @@
   "description": "Track playtime, positions, and pairings for a youth soccer team, and generate fair lineup plans.",
   "private": true,
   "type": "commonjs",
+  "main": "electron/main.js",
   "engines": {
     "node": ">=25.7.0"
   },
   "scripts": {
     "start": "node server/index.js",
     "build": "npm --prefix react-client install && npm --prefix react-client run build",
-    "test": "node --test server/lib/*.test.js"
+    "test": "node --test server/lib/*.test.js",
+    "electron": "electron .",
+    "dist": "npm run build && electron-builder"
   },
   "dependencies": {
     "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.jcollins.soccerplanner",
+    "productName": "Soccer Planner",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**",
+      "server/**",
+      "react-client/dist/**",
+      "package.json",
+      "!server/**/*.test.js"
+    ],
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.sports"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Sports"
+    }
   }
 }

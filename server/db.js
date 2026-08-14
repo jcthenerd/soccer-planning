@@ -1,9 +1,12 @@
 'use strict';
 
+const fs = require('node:fs');
 const path = require('node:path');
 const { DatabaseSync } = require('node:sqlite');
 
-const DB_PATH = path.join(__dirname, '..', 'data', 'soccer.db');
+const DB_PATH = process.env.SOCCER_DB_PATH || path.join(__dirname, '..', 'data', 'soccer.db');
+
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 const db = new DatabaseSync(DB_PATH);
 
