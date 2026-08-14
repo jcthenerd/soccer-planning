@@ -30,6 +30,23 @@ Support/Soccer Planner/soccer.db` on macOS) and persists across app updates.
 Want to run it as a plain local server instead, or build it yourself? See
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" width="49%" alt="Dashboard with season summary and upcoming/recent games">
+  <img src="docs/screenshots/roster.png" width="49%" alt="Roster page listing players with jersey numbers and eligible positions">
+</p>
+<p align="center">
+  <img src="docs/screenshots/lineup-plan.png" width="49%" alt="Generated per-quarter lineup plan for a game">
+  <img src="docs/screenshots/stats-playtime.png" width="49%" alt="Season playtime percentage per player">
+</p>
+<p align="center">
+  <img src="docs/screenshots/stats-positions.png" width="49%" alt="Position variety showing the mix of positions each player has played">
+  <img src="docs/screenshots/stats-pairings.png" width="49%" alt="Pairing-rate heatmap showing how often players share the field">
+</p>
+
+*(Sample data shown above - not a real team.)*
+
 ## How it works
 
 1. **Roster** - add players, optionally restricting some to specific positions
