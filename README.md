@@ -9,68 +9,34 @@ conversation rather than hand-written, so expect the usual tradeoffs that
 come with that (pragmatic scope, light on tests, tuned for one team's
 workflow rather than configurability).
 
-## Run it
+## Install
 
-As a desktop app (recommended day-to-day):
+Download the latest release for your platform from the
+[Releases page](https://github.com/jcthenerd/soccer-planning/releases/latest):
 
-```
-npm install
-npm run build     # builds the React frontend into react-client/dist
-npm run electron  # opens the app in its own window
-```
+- **macOS (Apple Silicon)** - download the `.dmg`, open it, and drag Soccer
+  Planner into Applications. The app isn't notarized yet, so on first launch
+  macOS will warn that it's from an unidentified developer - right-click
+  (Control-click) the app and choose **Open**, then **Open** again to
+  confirm. After that it launches normally. Intel Macs aren't built yet -
+  see [CONTRIBUTING.md](CONTRIBUTING.md) to build from source instead.
+- **Windows** - download the `Setup *.exe` installer and run it.
+- **Linux** - download the `.AppImage`, make it executable
+  (`chmod +x Soccer*.AppImage`), and run it.
 
-The first launch copies any existing `data/soccer.db` into the OS's
-per-user app-data directory (e.g. `~/Library/Application Support/Soccer
-Planner/soccer.db` on macOS) and uses that from then on - the app is no
-longer tied to this repo checkout once that one-time migration happens.
+Data is stored in your OS's per-user app-data directory (e.g. `~/Library/Application
+Support/Soccer Planner/soccer.db` on macOS) and persists across app updates.
 
-To build an installable app (`.dmg`/`.zip` on macOS, `.exe` on Windows via
-NSIS, `.AppImage` on Linux):
-
-```
-npm run dist
-```
-
-Output lands in `release/`. Builds are unsigned, so on macOS the first
-launch needs a right-click -> Open to get past Gatekeeper. Windows builds
-from macOS require Wine to be installed locally.
-
-As a plain server (for local dev, or browser access):
-
-```
-npm install
-npm run build
-npm start
-```
-
-Then open http://localhost:3000. Data is stored locally in `data/soccer.db`
-(SQLite, created automatically on first run). Re-run `npm run build` after
-changing anything under `react-client/src`.
-
-## Test
-
-```
-npm test
-```
-
-Runs the plan generator's unit tests (`server/lib/planGenerator.test.js`).
-
-## Frontend
-
-The UI (Dashboard, Roster, Settings, Games, Stats) is a React app in
-`react-client/`, built with Vite and `react-router-dom`. Express serves the
-built `react-client/dist/` at `/` and everything under `/api` as JSON. For
-active development, `npm run dev` inside `react-client/` runs a Vite dev
-server on :5173 that proxies `/api` to :3000, giving hot reload instead of a
-rebuild-per-change loop.
+Want to run it as a plain local server instead, or build it yourself? See
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## How it works
 
 1. **Roster** - add players, optionally restricting some to specific positions
    (e.g. only certain kids play goalkeeper).
-2. **Settings** - positions and formations are fully configurable, seeded with
-   a default 5v5 formation (1 Goalkeeper, 2 Defenders, 2 Forwards). Add more
-   positions/formations to grow into 11v11 later.
+2. **Settings** - positions and formations are fully configurable. First run
+   walks you through a preset formation for your team's age group (or you
+   can add positions/formations manually and skip presets entirely).
 3. **Games** - schedule a game, mark who's available, then **Generate Plan**
    to get a fair per-quarter lineup. Edit any cell (it swaps players to keep
    every quarter valid) and **Save Plan** when happy. Under **Goals**, record
@@ -89,3 +55,5 @@ once the opponent's goals have been entered.
 
 - Attendance is per-game, not per-quarter (no modeling of late arrivals).
 - Quarters are treated as equal-length units for playtime %.
+- macOS builds are Apple Silicon only, and unsigned/unnotarized (see Install
+  above for the one-time Gatekeeper workaround).
