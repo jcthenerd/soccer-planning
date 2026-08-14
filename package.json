@@ -1,6 +1,6 @@
 {
   "name": "soccer-planning",
-  "version": "1.0.0",
+  "version": "0.0.1-alpha",
   "description": "Track playtime, positions, and pairings for a youth soccer team, and generate fair lineup plans.",
   "private": true,
   "type": "commonjs",
