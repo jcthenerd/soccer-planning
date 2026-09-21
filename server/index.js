@@ -13,8 +13,12 @@ const seasonsRouter = require('./routes/seasons');
 const gamesRouter = require('./routes/games');
 const statsRouter = require('./routes/stats');
 const setupRouter = require('./routes/setup');
+const dataRouter = require('./routes/data');
 
 const app = express();
+// Mounted before the global JSON parser: the import route needs a larger body
+// limit than the 100kb default.
+app.use('/api/data', dataRouter);
 app.use(express.json());
 
 app.use('/api/players', playersRouter);

@@ -93,7 +93,7 @@ formations there rather than inlining them in the route.
 
 **Route modules mirror resources**, one file per table-ish concept under
 `server/routes/` (`players`, `positions`, `formations`, `seasons`, `games`,
-`stats`, `setup`), each a plain `express.Router()` mounted in
+`stats`, `setup`, `data`), each a plain `express.Router()` mounted in
 `server/index.js`. Write
 routes generally: validate input, run the mutation(s) inside `transaction()`,
 then re-fetch and return the canonical serialized shape (see `getGameDetail`
@@ -101,6 +101,18 @@ in `games.js`) rather than trusting the request body echoed back. The generic
 error handler in `server/index.js` maps SQLite `FOREIGN KEY`/`UNIQUE`
 constraint failures to 409s, so route handlers don't need their own
 try/catch for those.
+
+**Export/import** (`server/routes/data.js`, `server/lib/dataTransfer.js`).
+`GET /api/data/export` dumps every table as one JSON file (`format`/`version`
+header + `tables`), and `POST /api/data/import` *replaces* the whole database
+with such a file inside one transaction (ids preserved; any failure rolls
+back). This is how data moves between computers - there's no merge, by design,
+since ids collide across installs. The route is mounted *before* the global
+`express.json()` in `server/index.js` because it needs a larger body limit.
+When adding a table, add it to `TABLES` in `dataTransfer.js` (parents before
+children) or it will silently be left out of exports. Columns are matched by
+name on import, so new columns don't require a version bump; bump `VERSION`
+only for changes an older importer couldn't handle.
 
 **Core domain model.** A `formation` has `formation_slots` (position +
 count + optional `drop_priority`, used to gracefully shrink the lineup when

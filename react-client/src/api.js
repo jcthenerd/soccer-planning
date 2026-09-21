@@ -19,3 +19,15 @@ export const api = {
   patch: (url, body) => apiRequest('PATCH', url, body),
   del: (url) => apiRequest('DELETE', url),
 };
+
+// Reads a Soccer Planner export file chosen by the user and replaces all local
+// data with it. Throws an Error with a user-presentable message on failure.
+export async function importDataFile(file) {
+  let payload;
+  try {
+    payload = JSON.parse(await file.text());
+  } catch {
+    throw new Error('That file is not valid JSON. Choose a Soccer Planner export file.');
+  }
+  return api.post('/api/data/import', payload);
+}
