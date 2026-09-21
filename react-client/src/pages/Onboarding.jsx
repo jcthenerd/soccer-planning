@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api.js';
+import { api, importDataFile } from '../api.js';
 
 export default function Onboarding({ onComplete }) {
   const [presets, setPresets] = useState([]);
@@ -37,6 +37,22 @@ export default function Onboarding({ onComplete }) {
     } catch (err) {
       setError(err.message);
     } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function importBackup(e) {
+    const input = e.target;
+    const file = input.files[0];
+    input.value = '';
+    if (!file) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await importDataFile(file);
+      window.location.reload();
+    } catch (err) {
+      setError(`Import failed: ${err.message}`);
       setSubmitting(false);
     }
   }
@@ -82,6 +98,14 @@ export default function Onboarding({ onComplete }) {
       <button type="button" className="secondary" onClick={skip} disabled={submitting}>
         Skip - I'll set up positions and formations myself
       </button>
+      <section className="card" style={{ marginTop: '24px' }}>
+        <h2>Already using Soccer Planner on another computer?</h2>
+        <p>Import an export file from that computer to bring over your roster, games, and settings.</p>
+        <label>
+          Import from file{' '}
+          <input type="file" accept=".json,application/json" disabled={submitting} onChange={importBackup} />
+        </label>
+      </section>
     </div>
   );
 }

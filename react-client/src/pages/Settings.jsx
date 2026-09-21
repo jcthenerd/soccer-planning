@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api.js';
+import { api, importDataFile } from '../api.js';
 
 function SeasonsSection() {
   const [seasons, setSeasons] = useState([]);
@@ -366,6 +366,46 @@ function FormationsSection({ positions, onPositionsChange }) {
   );
 }
 
+function DataSection() {
+  const [importing, setImporting] = useState(false);
+
+  async function handleFileChosen(e) {
+    const input = e.target;
+    const file = input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (!confirm(
+      `Import "${file.name}"?\n\nThis REPLACES all data on this computer (players, games, seasons, formations) with the contents of the file. This can't be undone - export first if you want a backup.`
+    )) return;
+    setImporting(true);
+    try {
+      await importDataFile(file);
+      window.location.reload();
+    } catch (err) {
+      alert(`Import failed: ${err.message}`);
+      setImporting(false);
+    }
+  }
+
+  return (
+    <section className="card">
+      <h2>Export &amp; Import</h2>
+      <p>
+        Move your data to another computer: export it here, copy the file over, then import it
+        on the other machine. Importing replaces everything on that machine, so keep the
+        computers in sync by always importing from whichever one you used last.
+      </p>
+      <div className="inline-form">
+        <a className="btn" href="/api/data/export" download>Export data</a>
+        <label>
+          Import from file{' '}
+          <input type="file" accept=".json,application/json" disabled={importing} onChange={handleFileChosen} />
+        </label>
+      </div>
+    </section>
+  );
+}
+
 export default function Settings() {
   const [positions, setPositions] = useState([]);
 
@@ -382,6 +422,7 @@ export default function Settings() {
       <PositionsSection positions={positions} onChange={loadPositions} />
 
       <FormationsSection positions={positions} onPositionsChange={loadPositions} />
+      <DataSection />
     </>
   );
 }

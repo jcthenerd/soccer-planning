@@ -60,6 +60,10 @@ Want to run it as a plain local server instead, or build it yourself? See
    each player's goals plus the opponent's final goal count.
 4. **Stats** - season playtime %, win/loss/tie record, goals scored, position
    variety, and a pairing-rate matrix showing who's played together most/least.
+5. **Export / Import** - Settings has an Export button that saves your whole
+   team's data to a `.json` file, and an Import button (also offered on the
+   first-run screen) to load one. Use it to move to a new computer or keep two
+   in step. Importing *replaces* everything on that machine.
 
 The plan generator balances playtime deficits, pairing variety, and bench
 streaks using season-to-date history; it only "knows about" games whose plan
