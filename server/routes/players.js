@@ -2,6 +2,7 @@
 
 const express = require('express');
 const { db, transaction } = require('../db');
+const { parseAysoTeamDirectory } = require('../lib/rosterImport');
 
 const router = express.Router();
 
@@ -68,6 +69,49 @@ router.post('/', (req, res) => {
   });
 
   res.status(201).json(serializePlayer(db.prepare('SELECT * FROM players WHERE id = ?').get(id)));
+});
+
+router.post('/import-rtf', (req, res) => {
+  const { rtf } = req.body || {};
+  if (!rtf || typeof rtf !== 'string') {
+    return res.status(400).json({ error: 'rtf (string) is required' });
+  }
+
+  let parsed;
+  try {
+    parsed = parseAysoTeamDirectory(rtf);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+
+  if (!parsed.players.length) {
+    return res.status(400).json({ error: 'No player names found in that file.' });
+  }
+
+  const existingNames = new Set(
+    db.prepare('SELECT name FROM players').all().map((row) => row.name.toLowerCase())
+  );
+
+  const createdIds = [];
+  const skipped = [];
+
+  transaction(() => {
+    const insert = db.prepare('INSERT INTO players (name) VALUES (?)');
+    for (const name of parsed.players) {
+      if (existingNames.has(name.toLowerCase())) {
+        skipped.push(name);
+        continue;
+      }
+      createdIds.push(Number(insert.run(name).lastInsertRowid));
+      existingNames.add(name.toLowerCase());
+    }
+  });
+
+  res.status(201).json({
+    team_name: parsed.teamName,
+    created: createdIds.map((id) => serializePlayer(db.prepare('SELECT * FROM players WHERE id = ?').get(id))),
+    skipped,
+  });
 });
 
 router.get('/:id', (req, res) => {

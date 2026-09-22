@@ -31,3 +31,10 @@ export async function importDataFile(file) {
   }
   return api.post('/api/data/import', payload);
 }
+
+// Reads an AYSO "Team Directory" report (.rtf) chosen by the user and adds
+// any roster players it lists that aren't already in the roster.
+export async function importRosterRtf(file) {
+  const rtf = await file.text();
+  return api.post('/api/players/import-rtf', { rtf });
+}
