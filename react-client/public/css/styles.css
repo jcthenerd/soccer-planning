@@ -144,7 +144,7 @@ tbody tr:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); 
 
 form label { display: block; margin-bottom: 12px; font-size: 0.9em; color: var(--text-secondary); font-weight: 500; }
 
-input[type="text"], input[type="number"], input[type="date"], select {
+input[type="text"], input[type="number"], input[type="date"], select, textarea {
   font-family: inherit;
   font-size: 0.95em;
   color: var(--ink);
@@ -154,7 +154,8 @@ input[type="text"], input[type="number"], input[type="date"], select {
   padding: 8px 12px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
-input[type="text"]::placeholder, input[type="number"]::placeholder { color: var(--text-muted); opacity: 1; }
+input[type="text"]::placeholder, input[type="number"]::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 1; }
+textarea { min-height: 70px; resize: vertical; }
 
 select {
   appearance: none;
@@ -165,13 +166,13 @@ select {
   padding-right: 32px;
 }
 
-input:focus, select:focus {
+input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
-form input[type="text"], form input[type="number"], form input[type="date"], form select {
+form input[type="text"], form input[type="number"], form input[type="date"], form select, form textarea {
   display: block;
   margin-top: 5px;
   width: 100%;
@@ -250,6 +251,14 @@ button[data-action="delete"]:hover, button[data-action="remove-slot"]:hover, but
 .formation-card { border: 1px solid var(--gridline); border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; }
 .formation-card h3 { margin: 0 0 4px; font-weight: 700; }
 .formation-card ul { margin: 6px 0; padding-left: 20px; color: var(--text-secondary); }
+
+/* Journal entries ---------------------------------------------------------- */
+
+.journal-entry { border: 1px solid var(--gridline); border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; }
+.journal-entry-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.journal-entry-header strong { font-size: 1.05em; }
+.journal-entry-field { margin-bottom: 6px; }
+.journal-entry-field .label { font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); font-weight: 600; margin-right: 6px; }
 
 /* Lineup plan grid ------------------------------------------------------------- */
 

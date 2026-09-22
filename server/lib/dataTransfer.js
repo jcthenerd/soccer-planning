@@ -20,6 +20,7 @@ const TABLES = [
   'game_attendance',
   'quarters',
   'assignments',
+  'journal_entries',
 ];
 
 class ImportError extends Error {}
