@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api.js';
+import { api, importRosterRtf } from '../api.js';
 
 function PositionChecks({ positions, selectedIds, onChange }) {
   return (
@@ -31,6 +31,7 @@ export default function Roster() {
   const [addForm, setAddForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [editDraft, setEditDraft] = useState(null);
+  const [importing, setImporting] = useState(false);
 
   async function loadPlayers() {
     setPlayers(await api.get('/api/players'));
@@ -93,9 +94,44 @@ export default function Roster() {
     await loadPlayers();
   }
 
+  async function handleImportFileChosen(e) {
+    const input = e.target;
+    const file = input.files[0];
+    input.value = '';
+    if (!file) return;
+    setImporting(true);
+    try {
+      const result = await importRosterRtf(file);
+      await loadPlayers();
+      const addedNames = result.created.map((p) => p.name);
+      const lines = [`Added ${addedNames.length} player${addedNames.length === 1 ? '' : 's'}${result.team_name ? ` from ${result.team_name}` : ''}.`];
+      if (addedNames.length) lines.push(addedNames.join(', '));
+      if (result.skipped.length) lines.push(`Already on the roster, skipped: ${result.skipped.join(', ')}`);
+      alert(lines.join('\n'));
+    } catch (err) {
+      alert(`Import failed: ${err.message}`);
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <>
       <h1>Roster</h1>
+
+      <section className="card">
+        <h2>Import Roster</h2>
+        <p>
+          Import players from an AYSO Team Directory report (.rtf) - specifically the version
+          generated with only the "Player Name" column selected, no other fields. Only new names
+          are added - players already on the roster are left as-is. Jersey numbers and other
+          details still need to be filled in by hand.
+        </p>
+        <label>
+          Import from file{' '}
+          <input type="file" accept=".rtf,application/rtf,text/rtf" disabled={importing} onChange={handleImportFileChosen} />
+        </label>
+      </section>
 
       <section className="card">
         <h2>Add Player</h2>
