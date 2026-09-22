@@ -14,6 +14,7 @@ const gamesRouter = require('./routes/games');
 const statsRouter = require('./routes/stats');
 const setupRouter = require('./routes/setup');
 const dataRouter = require('./routes/data');
+const settingsRouter = require('./routes/settings');
 
 const app = express();
 // Mounted before the global JSON parser: the import route needs a larger body
@@ -28,6 +29,7 @@ app.use('/api/seasons', seasonsRouter);
 app.use('/api/games', gamesRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/setup', setupRouter);
+app.use('/api/settings', settingsRouter);
 
 // React app build. Run `npm run build` (root or react-client/) to
 // (re)generate dist/ after changing react-client/src.

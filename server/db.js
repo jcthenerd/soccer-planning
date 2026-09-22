@@ -92,6 +92,16 @@ CREATE TABLE IF NOT EXISTS assignments (
   position_id INTEGER REFERENCES positions(id) ON DELETE RESTRICT,
   UNIQUE(quarter_id, player_id)
 );
+
+CREATE TABLE IF NOT EXISTS team_settings (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  region TEXT,
+  division TEXT,
+  team_name TEXT,
+  team_colors TEXT,
+  coach_name TEXT,
+  assistant_coach_name TEXT
+);
 `);
 
 function seed() {
@@ -117,6 +127,8 @@ function migrate() {
   if (!gameColumns.some((c) => c.name === 'opponent_goals')) {
     db.exec('ALTER TABLE games ADD COLUMN opponent_goals INTEGER');
   }
+
+  db.prepare('INSERT OR IGNORE INTO team_settings (id) VALUES (1)').run();
 }
 
 seed();

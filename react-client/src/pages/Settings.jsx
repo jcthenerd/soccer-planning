@@ -1,6 +1,57 @@
 import { useEffect, useState } from 'react';
 import { api, importDataFile } from '../api.js';
 
+const TEAM_INFO_FIELDS = [
+  ['region', 'Region'],
+  ['division', 'Division (e.g. "10U - Coed")'],
+  ['team_name', 'Team Name'],
+  ['team_colors', 'Team Colors'],
+  ['coach_name', 'Coach'],
+  ['assistant_coach_name', 'Ass. Coach'],
+];
+
+function TeamInfoSection() {
+  const [draft, setDraft] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api.get('/api/settings/team').then((row) => setDraft(row));
+  }, []);
+
+  async function handleSave(e) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const saved = await api.put('/api/settings/team', draft);
+      setDraft(saved);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!draft) return null;
+
+  return (
+    <section className="card">
+      <h2>Team Info</h2>
+      <p>Used to fill in the header of the exported lineup PDF.</p>
+      <form onSubmit={handleSave}>
+        {TEAM_INFO_FIELDS.map(([key, label]) => (
+          <label key={key} style={{ display: 'block', marginBottom: 6 }}>
+            {label}{' '}
+            <input
+              type="text"
+              value={draft[key] ?? ''}
+              onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+            />
+          </label>
+        ))}
+        <button type="submit" disabled={saving}>Save</button>
+      </form>
+    </section>
+  );
+}
+
 function SeasonsSection() {
   const [seasons, setSeasons] = useState([]);
   const [drafts, setDrafts] = useState({});
@@ -418,6 +469,7 @@ export default function Settings() {
   return (
     <>
       <h1>Settings</h1>
+      <TeamInfoSection />
       <SeasonsSection />
       <PositionsSection positions={positions} onChange={loadPositions} />
 

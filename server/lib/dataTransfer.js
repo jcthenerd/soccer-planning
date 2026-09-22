@@ -9,6 +9,7 @@ const VERSION = 1;
 // foreign keys stay satisfied without having to toggle PRAGMA foreign_keys
 // (which can't be changed inside a transaction).
 const TABLES = [
+  'team_settings',
   'players',
   'positions',
   'player_position_eligibility',
@@ -45,6 +46,10 @@ function validate(payload) {
     throw new ImportError('This export file is missing its data.');
   }
   for (const table of TABLES) {
+    // A table absent entirely (rather than present but malformed) means the
+    // export predates that table - tolerate it so old export files still
+    // import into newer builds; importData() falls back to no rows for it.
+    if (!Object.hasOwn(payload.tables, table)) continue;
     const rows = payload.tables[table];
     if (!Array.isArray(rows)) {
       throw new ImportError(`This export file is missing the "${table}" table.`);
@@ -81,7 +86,7 @@ function importData(payload) {
         // build with extra/missing columns still loads (missing ones fall
         // back to their column defaults).
         const known = db.prepare(`PRAGMA table_info(${table})`).all().map((c) => c.name);
-        const rows = payload.tables[table];
+        const rows = payload.tables[table] || [];
         for (const row of rows) {
           const columns = known.filter((c) => Object.hasOwn(row, c));
           const placeholders = columns.map(() => '?').join(', ');
@@ -90,6 +95,9 @@ function importData(payload) {
         }
         counts[table] = rows.length;
       }
+      // An export predating team_settings has no rows for it; the table
+      // always needs its single id=1 row present for the settings route.
+      db.prepare('INSERT OR IGNORE INTO team_settings (id) VALUES (1)').run();
       return counts;
     });
   } catch (err) {

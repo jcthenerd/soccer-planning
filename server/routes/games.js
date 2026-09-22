@@ -4,6 +4,7 @@ const express = require('express');
 const { db, transaction } = require('../db');
 const { generatePlan } = require('../lib/planGenerator');
 const { computeSeasonState } = require('../lib/seasonStats');
+const { buildLineupPdf } = require('../lib/lineupPdf');
 
 const router = express.Router();
 
@@ -164,6 +165,22 @@ router.delete('/:id', (req, res) => {
   if (!existing) return res.status(404).json({ error: 'Game not found' });
   db.prepare('DELETE FROM games WHERE id = ?').run(existing.id);
   res.status(204).end();
+});
+
+router.get('/:id/lineup-pdf', (req, res) => {
+  const game = getGameDetail(req.params.id);
+  if (!game) return res.status(404).json({ error: 'Game not found' });
+
+  const teamSettings = db.prepare('SELECT * FROM team_settings WHERE id = 1').get();
+  const doc = buildLineupPdf({ teamSettings, game });
+
+  const namePart = [game.date, game.opponent].filter(Boolean).join('-vs-').replace(/[^a-zA-Z0-9-]+/g, '_');
+  res.setHeader('Content-Type', 'application/pdf');
+  // inline (not attachment): lets the frontend embed this in a preview
+  // iframe; the download link still forces a save via its `download` attribute.
+  res.setHeader('Content-Disposition', `inline; filename="lineup-${namePart}.pdf"`);
+  doc.pipe(res);
+  doc.end();
 });
 
 router.get('/:id/attendance', (req, res) => {

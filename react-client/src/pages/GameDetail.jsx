@@ -24,6 +24,7 @@ export default function GameDetail() {
   const [attendanceDraft, setAttendanceDraft] = useState({});
   const [goalsDraft, setGoalsDraft] = useState({});
   const [opponentGoalsDraft, setOpponentGoalsDraft] = useState('');
+  const [lineupPreviewUrl, setLineupPreviewUrl] = useState(null);
 
   const loadGame = useCallback(async () => {
     const data = await api.get(`/api/games/${gameId}`);
@@ -90,6 +91,10 @@ export default function GameDetail() {
     }
   }
 
+  function toggleLineupPreview() {
+    setLineupPreviewUrl(lineupPreviewUrl ? null : `/api/games/${gameId}/lineup-pdf?t=${Date.now()}`);
+  }
+
   async function handleDeleteGame() {
     if (!confirm(`Delete the game vs ${gameData.opponent || 'TBD'} on ${gameData.date}? This cannot be undone.`)) return;
     try {
@@ -135,7 +140,19 @@ export default function GameDetail() {
     <>
       <h1>{gameData.date} vs {gameData.opponent || 'TBD'}</h1>
       <p>Formation: {gameData.formation_name} &middot; {gameData.num_quarters} quarters</p>
+      <button type="button" onClick={toggleLineupPreview}>
+        {lineupPreviewUrl ? 'Hide Lineup PDF Preview' : 'Preview Lineup PDF'}
+      </button>{' '}
+      <a className="btn" href={`/api/games/${gameId}/lineup-pdf`} download>Download Lineup PDF</a>{' '}
       <button type="button" data-action="delete" onClick={handleDeleteGame}>Delete Game</button>
+
+      {lineupPreviewUrl && (
+        <iframe
+          title="Lineup PDF preview"
+          src={lineupPreviewUrl}
+          style={{ width: '100%', height: '80vh', border: '1px solid var(--gridline)', marginTop: 12, borderRadius: 6 }}
+        />
+      )}
 
       <section className="card">
         <h2>Attendance</h2>
