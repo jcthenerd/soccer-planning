@@ -93,6 +93,17 @@ CREATE TABLE IF NOT EXISTS assignments (
   UNIQUE(quarter_id, player_id)
 );
 
+CREATE TABLE IF NOT EXISTS journal_entries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
+  game_id INTEGER REFERENCES games(id) ON DELETE SET NULL,
+  entry_date TEXT,
+  strengths TEXT,
+  improvements TEXT,
+  notes TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS team_settings (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   region TEXT,
@@ -126,6 +137,35 @@ function migrate() {
   const gameColumns = db.prepare("PRAGMA table_info(games)").all();
   if (!gameColumns.some((c) => c.name === 'opponent_goals')) {
     db.exec('ALTER TABLE games ADD COLUMN opponent_goals INTEGER');
+  }
+
+  // journal_entries.player_id started out NOT NULL, then had to become
+  // nullable (a null player_id means a team-wide entry). SQLite can't ALTER
+  // a column to drop NOT NULL, so an install that already created the old
+  // table needs a rebuild: new table in the current shape, copy rows over,
+  // swap it in.
+  const journalColumns = db.prepare("PRAGMA table_info(journal_entries)").all();
+  const journalPlayerId = journalColumns.find((c) => c.name === 'player_id');
+  if (journalPlayerId && journalPlayerId.notnull) {
+    transaction(() => {
+      db.exec(`
+        CREATE TABLE journal_entries_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
+          game_id INTEGER REFERENCES games(id) ON DELETE SET NULL,
+          entry_date TEXT,
+          strengths TEXT,
+          improvements TEXT,
+          notes TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        INSERT INTO journal_entries_new
+          SELECT id, player_id, game_id, entry_date, strengths, improvements, notes, created_at
+          FROM journal_entries;
+        DROP TABLE journal_entries;
+        ALTER TABLE journal_entries_new RENAME TO journal_entries;
+      `);
+    });
   }
 
   db.prepare('INSERT OR IGNORE INTO team_settings (id) VALUES (1)').run();

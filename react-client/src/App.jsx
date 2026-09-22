@@ -6,6 +6,8 @@ import Roster from './pages/Roster.jsx';
 import Settings from './pages/Settings.jsx';
 import GamesList from './pages/GamesList.jsx';
 import GameDetail from './pages/GameDetail.jsx';
+import PlayerDetail from './pages/PlayerDetail.jsx';
+import Journal from './pages/Journal.jsx';
 import Stats from './pages/Stats.jsx';
 import Onboarding from './pages/Onboarding.jsx';
 
@@ -14,6 +16,7 @@ const NAV_ITEMS = [
   { to: '/roster', label: 'Roster' },
   { to: '/settings', label: 'Settings' },
   { to: '/games', label: 'Games' },
+  { to: '/journal', label: 'Journal' },
   { to: '/stats', label: 'Stats' },
 ];
 
@@ -48,9 +51,11 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/roster" element={<Roster />} />
+        <Route path="/roster/:id" element={<PlayerDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/games" element={<GamesList />} />
         <Route path="/games/:id" element={<GameDetail />} />
+        <Route path="/journal" element={<Journal />} />
         <Route path="/stats" element={<Stats />} />
       </Routes>
     </div>

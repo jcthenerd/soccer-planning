@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, importRosterRtf } from '../api.js';
 
 function PositionChecks({ positions, selectedIds, onChange }) {
@@ -200,6 +201,7 @@ export default function Roster() {
                 <td>{player.active ? 'Active' : 'Inactive'}</td>
                 <td>{player.notes ?? ''}</td>
                 <td>
+                  <Link to={`/roster/${player.id}`} className="btn">Journal</Link>{' '}
                   <button type="button" data-action="edit" onClick={() => startEdit(player)}>Edit</button>
                   <button
                     type="button"
