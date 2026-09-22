@@ -91,6 +91,35 @@ const AGE_GROUP_PRESETS = [
       },
     ],
   },
+  {
+    key: 'U15',
+    label: 'U15',
+    formatLabel: '11v11',
+    formations: [
+      {
+        key: 'u15-1-4-4-2',
+        name: 'U15: 1 GK, 4 Defenders, 4 Midfielders, 2 Forwards',
+        description: '11v11 - 1 Goalkeeper, 4 Defenders, 4 Midfielders, 2 Forwards',
+        slots: [
+          { position: 'Goalkeeper', count: 1, drop_priority: null },
+          { position: 'Defender', count: 4, drop_priority: 3 },
+          { position: 'Midfielder', count: 4, drop_priority: 2 },
+          { position: 'Forward', count: 2, drop_priority: 1 },
+        ],
+      },
+      {
+        key: 'u15-1-4-3-3',
+        name: 'U15: 1 GK, 4 Defenders, 3 Midfielders, 3 Forwards',
+        description: '11v11 - 1 Goalkeeper, 4 Defenders, 3 Midfielders, 3 Forwards',
+        slots: [
+          { position: 'Goalkeeper', count: 1, drop_priority: null },
+          { position: 'Defender', count: 4, drop_priority: 3 },
+          { position: 'Midfielder', count: 3, drop_priority: 2 },
+          { position: 'Forward', count: 3, drop_priority: 1 },
+        ],
+      },
+    ],
+  },
 ];
 
 // Standard position set covering every preset above, in a sensible
