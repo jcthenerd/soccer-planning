@@ -16,7 +16,8 @@
     "dist": "npm run build && electron-builder --publish never"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "pdfkit": "^0.20.2"
   },
   "devDependencies": {
     "electron": "^43.4.0",
@@ -37,7 +38,10 @@
       "!server/**/*.test.js"
     ],
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "category": "public.app-category.sports",
       "icon": "build/icon.icns"
     },
