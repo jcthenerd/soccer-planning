@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
+import SavedNote, { useSavedFlash } from '../components/SavedNote.jsx';
 
 function buildEditablePlanFromSaved(gameData) {
   if (!gameData.assignments.length) return null;
@@ -25,6 +26,9 @@ export default function GameDetail() {
   const [goalsDraft, setGoalsDraft] = useState({});
   const [opponentGoalsDraft, setOpponentGoalsDraft] = useState('');
   const [lineupPreviewUrl, setLineupPreviewUrl] = useState(null);
+  const [attendanceSaved, flashAttendanceSaved] = useSavedFlash();
+  const [goalsSaved, flashGoalsSaved] = useSavedFlash();
+  const [planSaved, flashPlanSaved] = useSavedFlash();
 
   const loadGame = useCallback(async () => {
     const data = await api.get(`/api/games/${gameId}`);
@@ -52,6 +56,7 @@ export default function GameDetail() {
     const attendance = gameData.attendance.map((a) => ({ player_id: a.player_id, available: !!attendanceDraft[a.player_id] }));
     await api.put(`/api/games/${gameId}/attendance`, { attendance });
     await loadGame();
+    flashAttendanceSaved();
   }
 
   async function handleSaveGoals() {
@@ -60,6 +65,7 @@ export default function GameDetail() {
     try {
       await api.put(`/api/games/${gameId}/goals`, { goals, opponent_goals });
       await loadGame();
+      flashGoalsSaved();
     } catch (err) {
       alert(err.message);
     }
@@ -86,6 +92,7 @@ export default function GameDetail() {
     try {
       await api.put(`/api/games/${gameId}/plan`, payload);
       await loadGame();
+      flashPlanSaved();
     } catch (err) {
       alert(err.message);
     }
@@ -170,6 +177,7 @@ export default function GameDetail() {
           ))}
         </div>
         <button type="button" onClick={handleSaveAttendance}>Save Attendance</button>
+        <SavedNote show={attendanceSaved} />
       </section>
 
       <section className="card">
@@ -207,6 +215,7 @@ export default function GameDetail() {
           ))}
         </div>
         <button type="button" onClick={handleSaveGoals}>Save Goals</button>
+        <SavedNote show={goalsSaved} />
       </section>
 
       <section className="card">
@@ -215,6 +224,7 @@ export default function GameDetail() {
         {editablePlan && (
           <button type="button" className="secondary" onClick={handleSavePlan}>Save Plan</button>
         )}
+        <SavedNote show={planSaved} />
         <div style={{ overflowX: 'auto', marginTop: 12 }}>
           {editablePlan && (
             <PlanGrid

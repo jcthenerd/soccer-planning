@@ -294,3 +294,11 @@ button[data-action="delete"]:hover, button[data-action="remove-slot"]:hover, but
 .pairing-table td { text-align: center; padding: 6px; border-radius: 6px; font-variant-numeric: tabular-nums; min-width: 44px; }
 .pairing-table td.diagonal { background: var(--gridline); color: var(--text-muted); }
 .pairing-table td.empty { background: transparent; color: var(--text-muted); }
+
+/* Inline "Saved" confirmation next to a save button (SavedNote.jsx). */
+.saved-note {
+  margin-left: 10px;
+  color: var(--accent);
+  font-size: 0.9em;
+  font-weight: 600;
+}

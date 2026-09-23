@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, importDataFile } from '../api.js';
+import SavedNote, { useSavedFlash } from '../components/SavedNote.jsx';
 
 const TEAM_INFO_FIELDS = [
   ['region', 'Region'],
@@ -13,6 +14,7 @@ const TEAM_INFO_FIELDS = [
 function TeamInfoSection() {
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [justSaved, flashSaved] = useSavedFlash();
 
   useEffect(() => {
     api.get('/api/settings/team').then((row) => setDraft(row));
@@ -24,6 +26,7 @@ function TeamInfoSection() {
     try {
       const saved = await api.put('/api/settings/team', draft);
       setDraft(saved);
+      flashSaved();
     } finally {
       setSaving(false);
     }
@@ -47,6 +50,7 @@ function TeamInfoSection() {
           </label>
         ))}
         <button type="submit" disabled={saving}>Save</button>
+        <SavedNote show={justSaved} />
       </form>
     </section>
   );
@@ -56,6 +60,7 @@ function SeasonsSection() {
   const [seasons, setSeasons] = useState([]);
   const [drafts, setDrafts] = useState({});
   const [addForm, setAddForm] = useState({ name: '', year: '', is_active: false });
+  const [savedId, flashSaved] = useSavedFlash();
 
   async function loadSeasons() {
     const rows = await api.get('/api/seasons');
@@ -71,6 +76,7 @@ function SeasonsSection() {
     if (!name) { alert('Name is required'); return; }
     await api.put(`/api/seasons/${season.id}`, { name, year: draft.year === '' ? null : Number(draft.year) });
     await loadSeasons();
+    flashSaved(season.id);
   }
 
   async function handleSetActive(season) {
@@ -130,6 +136,7 @@ function SeasonsSection() {
               <td>
                 <button type="button" data-action="save" onClick={() => handleSave(season)}>Save</button>
                 <button type="button" data-action="delete" onClick={() => handleDelete(season)}>Delete</button>
+                <SavedNote show={savedId === season.id} />
               </td>
             </tr>
           ))}
@@ -167,6 +174,7 @@ function SeasonsSection() {
 function PositionsSection({ positions, onChange }) {
   const [drafts, setDrafts] = useState({});
   const [addForm, setAddForm] = useState({ name: '', sort_order: 0 });
+  const [savedId, flashSaved] = useSavedFlash();
 
   useEffect(() => {
     setDrafts(Object.fromEntries(positions.map((p) => [p.id, { name: p.name, sort_order: p.sort_order }])));
@@ -178,6 +186,7 @@ function PositionsSection({ positions, onChange }) {
     if (!name) { alert('Name is required'); return; }
     await api.put(`/api/positions/${pos.id}`, { name, sort_order: Number(draft.sort_order) });
     await onChange();
+    flashSaved(pos.id);
   }
 
   async function handleDelete(pos) {
@@ -225,6 +234,7 @@ function PositionsSection({ positions, onChange }) {
               <td>
                 <button type="button" data-action="save" onClick={() => handleSave(pos)}>Save</button>
                 <button type="button" data-action="delete" onClick={() => handleDelete(pos)}>Delete</button>
+                <SavedNote show={savedId === pos.id} />
               </td>
             </tr>
           ))}
