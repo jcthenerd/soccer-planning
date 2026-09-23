@@ -38,7 +38,7 @@ export default function JournalEntryForm({ players = [], games = [], fixedPlayer
     if (fixedPlayerId !== undefined) {
       playerId = fixedPlayerId;
     } else {
-      if (!draft.player_id) { alert('Select a player or Whole Team'); return; }
+      if (!draft.player_id) { alert('Select the team or a player'); return; }
       playerId = draft.player_id === 'team' ? null : Number(draft.player_id);
     }
     if (draft.linkMode === 'date' && !draft.entry_date) { alert('Date is required'); return; }
@@ -60,20 +60,22 @@ export default function JournalEntryForm({ players = [], games = [], fixedPlayer
     <form onSubmit={handleSubmit}>
       {fixedPlayerId === undefined && (
         <label>
-          Player
+          About
           <select value={draft.player_id} onChange={(e) => setDraft({ ...draft, player_id: e.target.value })} required>
-            <option value="" disabled>Select a player</option>
+            <option value="" disabled>Select the team or a player</option>
             <option value="team">Whole team</option>
-            {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            <optgroup label="Players">
+              {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </optgroup>
           </select>
         </label>
       )}
 
       <label>
-        When
+        Relates to
         <select value={draft.linkMode} onChange={(e) => setDraft({ ...draft, linkMode: e.target.value })}>
-          <option value="date">Standalone date</option>
-          <option value="game">Link to a game</option>
+          <option value="date">A practice or other day</option>
+          <option value="game">A game</option>
         </select>
       </label>
 
