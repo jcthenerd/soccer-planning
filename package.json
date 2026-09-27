@@ -43,16 +43,22 @@
         "zip"
       ],
       "category": "public.app-category.sports",
-      "icon": "build/icon.icns"
+      "icon": "build/icon.icns",
+      "artifactName": "${productName}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "${productName}"
     },
     "win": {
       "target": "nsis",
-      "icon": "build/icon.ico"
+      "icon": "build/icon.ico",
+      "artifactName": "${productName}-Setup.${ext}"
     },
     "linux": {
       "target": "AppImage",
       "category": "Sports",
-      "icon": "build/icon.png"
+      "icon": "build/icon.png",
+      "artifactName": "${productName}-${arch}.${ext}"
     }
   }
 }
