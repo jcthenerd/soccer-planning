@@ -20,7 +20,7 @@ Download the latest release for your platform from the
   (Control-click) the app and choose **Open**, then **Open** again to
   confirm. After that it launches normally. Intel Macs aren't built yet -
   see [CONTRIBUTING.md](CONTRIBUTING.md) to build from source instead.
-- **Windows** - download the `Setup *.exe` installer and run it.
+- **Windows** - download the `Soccer Planner-Setup.exe` installer and run it.
 - **Linux** - download the `.AppImage`, make it executable
   (`chmod +x Soccer*.AppImage`), and run it.
 
