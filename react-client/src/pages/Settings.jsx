@@ -261,6 +261,128 @@ function PositionsSection({ positions, onChange }) {
   );
 }
 
+function TrackersSection({ trackers, onChange }) {
+  const [drafts, setDrafts] = useState({});
+  const [addForm, setAddForm] = useState({ name: '', sort_order: 0 });
+  const [savedId, flashSaved] = useSavedFlash();
+  const [layout, setLayout] = useState(null);
+  const [layoutSaved, flashLayoutSaved] = useSavedFlash();
+
+  useEffect(() => {
+    setDrafts(Object.fromEntries(trackers.map((t) => [t.id, { name: t.name, sort_order: t.sort_order }])));
+  }, [trackers]);
+
+  useEffect(() => {
+    api.get('/api/settings/team').then((row) => setLayout(row.tracker_layout));
+  }, []);
+
+  async function handleLayoutChange(e) {
+    const value = e.target.value;
+    setLayout(value);
+    await api.put('/api/settings/team', { tracker_layout: value });
+    flashLayoutSaved();
+  }
+
+  async function handleSave(tracker) {
+    const draft = drafts[tracker.id];
+    const name = draft.name.trim();
+    if (!name) { alert('Name is required'); return; }
+    await api.put(`/api/trackers/${tracker.id}`, { name, sort_order: Number(draft.sort_order) });
+    await onChange();
+    flashSaved(tracker.id);
+  }
+
+  async function handleDelete(tracker) {
+    if (!confirm(`Delete tracker "${tracker.name}"?`)) return;
+    try {
+      await api.del(`/api/trackers/${tracker.id}`);
+      await onChange();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  async function handleAdd(e) {
+    e.preventDefault();
+    const name = addForm.name.trim();
+    if (!name) return;
+    await api.post('/api/trackers', { name, sort_order: Number(addForm.sort_order) || 0 });
+    setAddForm({ name: '', sort_order: 0 });
+    await onChange();
+  }
+
+  return (
+    <section className="card">
+      <h2>Trackers</h2>
+      <p>
+        Each tracker gets its own blank tick-box column per player on the printed lineup sheet -
+        mark it by hand when you see it during the game (a good pass, an assist, moving into open
+        space, or whatever else you want to coach toward), then use the marks afterward for that
+        player&rsquo;s journal entry. Keep the list short (2-4) so the printed columns stay wide
+        enough to mark.
+      </p>
+      {layout != null && (
+        <p>
+          <label>
+            Print trackers{' '}
+            <select value={layout} onChange={handleLayoutChange}>
+              <option value="inline">In the roster grid (one column per tracker)</option>
+              <option value="separate_page">On their own page (with Coach Notes)</option>
+            </select>
+          </label>{' '}
+          <SavedNote show={layoutSaved} />
+        </p>
+      )}
+      <table>
+        <thead><tr><th>Name</th><th>Sort Order</th><th></th></tr></thead>
+        <tbody>
+          {trackers.map((tracker) => (
+            <tr key={tracker.id}>
+              <td>
+                <input
+                  type="text"
+                  value={drafts[tracker.id]?.name ?? ''}
+                  onChange={(e) => setDrafts({ ...drafts, [tracker.id]: { ...drafts[tracker.id], name: e.target.value } })}
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  style={{ width: '5em' }}
+                  value={drafts[tracker.id]?.sort_order ?? 0}
+                  onChange={(e) => setDrafts({ ...drafts, [tracker.id]: { ...drafts[tracker.id], sort_order: e.target.value } })}
+                />
+              </td>
+              <td>
+                <button type="button" data-action="save" onClick={() => handleSave(tracker)}>Save</button>
+                <button type="button" data-action="delete" onClick={() => handleDelete(tracker)}>Delete</button>
+                <SavedNote show={savedId === tracker.id} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <form className="inline-form" onSubmit={handleAdd}>
+        <input
+          type="text"
+          placeholder="Tracker name (e.g. Assists)"
+          required
+          value={addForm.name}
+          onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+        />
+        <input
+          type="number"
+          placeholder="Sort order"
+          style={{ width: '6em' }}
+          value={addForm.sort_order}
+          onChange={(e) => setAddForm({ ...addForm, sort_order: e.target.value })}
+        />
+        <button type="submit">Add Tracker</button>
+      </form>
+    </section>
+  );
+}
+
 const EMPTY_SLOT = () => ({ position_id: '', count: 1, drop_priority: '' });
 
 function PresetLoaderSection({ onApplied }) {
@@ -469,12 +591,17 @@ function DataSection() {
 
 export default function Settings() {
   const [positions, setPositions] = useState([]);
+  const [trackers, setTrackers] = useState([]);
 
   async function loadPositions() {
     setPositions(await api.get('/api/positions'));
   }
 
-  useEffect(() => { loadPositions(); }, []);
+  async function loadTrackers() {
+    setTrackers(await api.get('/api/trackers'));
+  }
+
+  useEffect(() => { loadPositions(); loadTrackers(); }, []);
 
   return (
     <>
@@ -484,6 +611,7 @@ export default function Settings() {
       <PositionsSection positions={positions} onChange={loadPositions} />
 
       <FormationsSection positions={positions} onPositionsChange={loadPositions} />
+      <TrackersSection trackers={trackers} onChange={loadTrackers} />
       <DataSection />
     </>
   );

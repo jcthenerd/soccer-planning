@@ -12,6 +12,7 @@ const TABLES = [
   'team_settings',
   'players',
   'positions',
+  'trackers',
   'player_position_eligibility',
   'formations',
   'formation_slots',

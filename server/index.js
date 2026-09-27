@@ -8,6 +8,7 @@ require('./db'); // ensures schema + seed run on startup
 
 const playersRouter = require('./routes/players');
 const positionsRouter = require('./routes/positions');
+const trackersRouter = require('./routes/trackers');
 const formationsRouter = require('./routes/formations');
 const seasonsRouter = require('./routes/seasons');
 const gamesRouter = require('./routes/games');
@@ -25,6 +26,7 @@ app.use(express.json());
 
 app.use('/api/players', playersRouter);
 app.use('/api/positions', positionsRouter);
+app.use('/api/trackers', trackersRouter);
 app.use('/api/formations', formationsRouter);
 app.use('/api/seasons', seasonsRouter);
 app.use('/api/games', gamesRouter);
