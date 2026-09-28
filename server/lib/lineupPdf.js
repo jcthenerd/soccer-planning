@@ -82,13 +82,28 @@ function formField(doc, x, y, label, value, width) {
   }
 }
 
-function buildLineupPdf({ teamSettings, game }) {
+// Coach-defined trackers (Passing, Assists, moving into open space, ...) get
+// one narrow blank column per player - ticked by hand during the game, then
+// used afterward to inform that player's journal entry. Column width shrinks
+// as more trackers are added, floored so a tick mark still fits.
+const TRACKER_COL_MIN = 32;
+const COACH_NOTES_LINES = 4;
+const COACH_NOTES_LINE_GAP = 18;
+
+function buildLineupPdf({ teamSettings, game, trackers = [] }) {
   const doc = new PDFDocument({ size: 'letter', margin: PAGE_MARGIN });
   const pageWidth = doc.page.width - PAGE_MARGIN * 2;
   const numQuarters = game.num_quarters || 4;
   const roster = buildRoster(game);
   const showGoals = !isFutureGame(game.date);
   const result = computeResult(game);
+
+  // 'separate_page' moves the tracker columns and Coach Notes off the main
+  // roster page and onto a page of their own - useful when a team has enough
+  // trackers that they'd otherwise crowd the player-name column. 'inline'
+  // (the default) keeps trackers as extra columns in the main grid.
+  const trackersOnOwnPage = teamSettings.tracker_layout === 'separate_page';
+  const inlineTrackers = trackersOnOwnPage ? [] : trackers;
 
   // --- Header: boxed logo + title, region/division heading, label/value grid ---
   const headerTop = PAGE_MARGIN;
@@ -137,7 +152,11 @@ function buildLineupPdf({ teamSettings, game }) {
   const goalsW = 45;
   const qtrTotalW = Math.min(180, pageWidth * 0.3);
   const qtrW = qtrTotalW / numQuarters;
-  const nameW = pageWidth - jerseyW - goalsW - qtrTotalW;
+  const trackersTotalW = inlineTrackers.length
+    ? Math.max(inlineTrackers.length * TRACKER_COL_MIN, Math.min(inlineTrackers.length * 55, pageWidth * 0.3))
+    : 0;
+  const trackerColW = inlineTrackers.length ? trackersTotalW / inlineTrackers.length : 0;
+  const nameW = pageWidth - jerseyW - goalsW - qtrTotalW - trackersTotalW;
   const headerRowH = 16;
   const subHeaderRowH = 14;
   const rowH = 18;
@@ -164,13 +183,23 @@ function buildLineupPdf({ teamSettings, game }) {
       qx += qtrW;
     }
 
+    let tx = tableX + jerseyW + nameW + goalsW + qtrTotalW;
+    doc.font('Helvetica-Bold').fontSize(6.5);
+    for (const tracker of inlineTrackers) {
+      doc.dash(...DOTTED).lineWidth(0.6).rect(tx, startY, trackerColW, totalHeaderH).stroke();
+      doc.text(tracker.name, tx + 2, startY + 3, { width: trackerColW - 4, align: 'center' });
+      tx += trackerColW;
+    }
+
     doc.undash();
     return startY + totalHeaderH;
   }
 
   y = drawTableHeader(y);
 
-  const footerReserve = 130;
+  // Room below the table for the footnotes and the date/score/result fields -
+  // plus the Coach Notes lines too, unless those moved to their own page.
+  const footerReserve = 210 + (trackersOnOwnPage ? 0 : COACH_NOTES_LINES * COACH_NOTES_LINE_GAP);
   doc.font('Helvetica').fontSize(9);
   for (const player of roster) {
     if (y + rowH > doc.page.height - PAGE_MARGIN - footerReserve) {
@@ -195,8 +224,17 @@ function buildLineupPdf({ teamSettings, game }) {
     for (let i = 1; i <= numQuarters; i++) {
       doc.dash(...DOTTED).lineWidth(0.6).rect(qx, y, qtrW, rowH).stroke();
       const mark = player.quarterMarks[i];
-      if (mark) doc.font('Helvetica-Bold').text(mark, qx, y + 4, { width: qtrW, align: 'center' });
+      // Left-aligned rather than centered - leaves blank space to the right
+      // for the coach to cross out and write a substitution during the game.
+      if (mark) doc.font('Helvetica-Bold').text(mark, qx + 3, y + 4, { width: qtrW - 3, lineBreak: false });
       qx += qtrW;
+    }
+
+    let tx = tableX + jerseyW + nameW + goalsW + qtrTotalW;
+    for (const tracker of inlineTrackers) {
+      // Left blank (no letter/number) - the coach ticks it by hand during the game.
+      doc.dash(...DOTTED).lineWidth(0.6).rect(tx, y, trackerColW, rowH).stroke();
+      tx += trackerColW;
     }
 
     y += rowH;
@@ -212,6 +250,10 @@ function buildLineupPdf({ teamSettings, game }) {
   );
   y += 10;
   doc.text('All players on roster must be listed; indicate reason for absence.', tableX, y, { width: pageWidth });
+  if (inlineTrackers.length) {
+    y += 10;
+    doc.text('Tick the tracker columns as you see them during the game; use the marks afterward for each player’s journal entry.', tableX, y, { width: pageWidth });
+  }
 
   y += 20;
 
@@ -244,6 +286,110 @@ function buildLineupPdf({ teamSettings, game }) {
     lineBreak: false,
   });
   formField(doc, PAGE_MARGIN + halfW + 16, y, 'Losing Team', losingTeam, halfW);
+  y += 26;
+
+  // --- Coach Notes: blank ruled lines for freeform post-game writeup ---
+  function drawCoachNotes(startY) {
+    let ny = startY;
+    doc.font('Helvetica-Bold').fontSize(10).text('Coach Notes', PAGE_MARGIN, ny, { width: pageWidth });
+    ny += 16;
+    doc.dash(...DOTTED).lineWidth(0.5);
+    for (let i = 0; i < COACH_NOTES_LINES; i++) {
+      doc.moveTo(PAGE_MARGIN, ny).lineTo(PAGE_MARGIN + pageWidth, ny).stroke();
+      ny += COACH_NOTES_LINE_GAP;
+    }
+    doc.undash();
+    return ny;
+  }
+
+  if (!trackersOnOwnPage) {
+    drawCoachNotes(y);
+    return doc;
+  }
+
+  // --- Trackers & Coach Notes page: everything the coach fills in by hand
+  // during/after the game, kept off the main roster grid so its columns
+  // (and the player-name column) stay full width. ---
+  doc.addPage();
+  let ty = PAGE_MARGIN;
+
+  if (trackers.length) {
+    doc.font('Helvetica-Bold').fontSize(14).text('Player Trackers', PAGE_MARGIN, ty, { width: pageWidth });
+    ty += 20;
+    const context = [teamSettings.team_name, game.opponent && `vs ${game.opponent}`, formatDate(game.date)]
+      .filter(Boolean).join(' — ');
+    if (context) {
+      doc.font('Helvetica').fontSize(9).text(context, PAGE_MARGIN, ty, { width: pageWidth });
+      ty += 16;
+    }
+
+    const tJerseyW = 55;
+    const tTrackersTotalW = Math.min(trackers.length * 100, pageWidth * 0.6);
+    const tTrackerColW = tTrackersTotalW / trackers.length;
+    const tNameW = pageWidth - tJerseyW - tTrackersTotalW;
+    const tHeaderH = 26;
+    const tRowH = 22;
+
+    function drawTrackerHeader(startY) {
+      doc.dash(...DOTTED).lineWidth(0.6);
+      doc.rect(PAGE_MARGIN, startY, tJerseyW, tHeaderH).stroke();
+      doc.rect(PAGE_MARGIN + tJerseyW, startY, tNameW, tHeaderH).stroke();
+      doc.font('Helvetica-Bold').fontSize(9);
+      doc.text('JERSEY#', PAGE_MARGIN, startY + tHeaderH / 2 - 4, { width: tJerseyW, align: 'center' });
+      doc.text('PLAYER NAME', PAGE_MARGIN + tJerseyW, startY + tHeaderH / 2 - 4, { width: tNameW, align: 'center' });
+      let tx = PAGE_MARGIN + tJerseyW + tNameW;
+      doc.fontSize(8);
+      for (const tracker of trackers) {
+        doc.dash(...DOTTED).lineWidth(0.6).rect(tx, startY, tTrackerColW, tHeaderH).stroke();
+        doc.text(tracker.name, tx + 3, startY + tHeaderH / 2 - 4, { width: tTrackerColW - 6, align: 'center' });
+        tx += tTrackerColW;
+      }
+      doc.undash();
+      return startY + tHeaderH;
+    }
+
+    ty = drawTrackerHeader(ty);
+
+    const notesReserve = 20 + COACH_NOTES_LINES * COACH_NOTES_LINE_GAP;
+    doc.font('Helvetica').fontSize(9);
+    for (const player of roster) {
+      if (ty + tRowH > doc.page.height - PAGE_MARGIN - notesReserve) {
+        doc.addPage();
+        ty = drawTrackerHeader(PAGE_MARGIN);
+      }
+
+      doc.dash(...DOTTED).lineWidth(0.6);
+      doc.rect(PAGE_MARGIN, ty, tJerseyW, tRowH).stroke();
+      doc.rect(PAGE_MARGIN + tJerseyW, ty, tNameW, tRowH).stroke();
+      doc.font('Helvetica').fontSize(9);
+      doc.text(player.jersey_number != null ? String(player.jersey_number) : '', PAGE_MARGIN, ty + 5, {
+        width: tJerseyW,
+        align: 'center',
+      });
+      doc.text(player.name, PAGE_MARGIN + tJerseyW + 4, ty + 5, { width: tNameW - 8, lineBreak: false });
+
+      let tx = PAGE_MARGIN + tJerseyW + tNameW;
+      for (const tracker of trackers) {
+        // Left blank - the coach ticks it by hand during the game.
+        doc.dash(...DOTTED).lineWidth(0.6).rect(tx, ty, tTrackerColW, tRowH).stroke();
+        tx += tTrackerColW;
+      }
+
+      ty += tRowH;
+    }
+    doc.undash();
+
+    ty += 10;
+    doc.font('Helvetica').fontSize(7.5).text(
+      'Tick a tracker cell as you see it during the game; use the marks afterward for each player’s journal entry.',
+      PAGE_MARGIN,
+      ty,
+      { width: pageWidth }
+    );
+    ty += 20;
+  }
+
+  drawCoachNotes(ty);
 
   return doc;
 }

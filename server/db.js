@@ -104,6 +104,12 @@ CREATE TABLE IF NOT EXISTS journal_entries (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS trackers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS team_settings (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   region TEXT,
@@ -111,7 +117,8 @@ CREATE TABLE IF NOT EXISTS team_settings (
   team_name TEXT,
   team_colors TEXT,
   coach_name TEXT,
-  assistant_coach_name TEXT
+  assistant_coach_name TEXT,
+  tracker_layout TEXT NOT NULL DEFAULT 'inline'
 );
 `);
 
@@ -166,6 +173,11 @@ function migrate() {
         ALTER TABLE journal_entries_new RENAME TO journal_entries;
       `);
     });
+  }
+
+  const teamSettingsColumns = db.prepare("PRAGMA table_info(team_settings)").all();
+  if (!teamSettingsColumns.some((c) => c.name === 'tracker_layout')) {
+    db.exec("ALTER TABLE team_settings ADD COLUMN tracker_layout TEXT NOT NULL DEFAULT 'inline'");
   }
 
   db.prepare('INSERT OR IGNORE INTO team_settings (id) VALUES (1)').run();

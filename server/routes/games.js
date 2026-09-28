@@ -172,7 +172,8 @@ router.get('/:id/lineup-pdf', (req, res) => {
   if (!game) return res.status(404).json({ error: 'Game not found' });
 
   const teamSettings = db.prepare('SELECT * FROM team_settings WHERE id = 1').get();
-  const doc = buildLineupPdf({ teamSettings, game });
+  const trackers = db.prepare('SELECT * FROM trackers ORDER BY sort_order, name').all();
+  const doc = buildLineupPdf({ teamSettings, game, trackers });
 
   const namePart = [game.date, game.opponent].filter(Boolean).join('-vs-').replace(/[^a-zA-Z0-9-]+/g, '_');
   res.setHeader('Content-Type', 'application/pdf');
