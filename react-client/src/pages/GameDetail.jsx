@@ -112,6 +112,8 @@ export default function GameDetail() {
     }
   }
 
+  const { uneven, neverBenched } = benchImbalance(editablePlan, availablePlayerIds);
+
   function findLocation(quarter, playerId) {
     const idx = quarter.assignments.findIndex((a) => a.player_id === playerId);
     if (idx !== -1) return { type: 'assignment', index: idx };
@@ -225,6 +227,13 @@ export default function GameDetail() {
           <button type="button" className="secondary" onClick={handleSavePlan}>Save Plan</button>
         )}
         <SavedNote show={planSaved} />
+        {uneven.length > 0 && (
+          <p className="bench-flag" role="status">
+            &#9888; Uneven bench time: {uneven.map(playerName).join(', ')} sit
+            {uneven.length === 1 ? 's' : ''} out more than once while {neverBenched.length === 1 ? 'another player has' : 'other players have'} not
+            sat out at all ({neverBenched.map(playerName).join(', ')}).
+          </p>
+        )}
         <div style={{ overflowX: 'auto', marginTop: 12 }}>
           {editablePlan && (
             <PlanGrid
@@ -239,6 +248,18 @@ export default function GameDetail() {
       </section>
     </>
   );
+}
+
+// Players benched 2+ times in the plan while at least one available player is
+// never benched. Computed from the editable plan so manual swaps update it.
+function benchImbalance(editablePlan, availablePlayerIds) {
+  if (!editablePlan) return { uneven: [], neverBenched: [] };
+  const counts = {};
+  for (const pid of availablePlayerIds) counts[pid] = 0;
+  for (const q of editablePlan) for (const pid of q.bench) if (pid in counts) counts[pid] += 1;
+  const neverBenched = availablePlayerIds.filter((pid) => counts[pid] === 0);
+  const uneven = neverBenched.length ? availablePlayerIds.filter((pid) => counts[pid] >= 2) : [];
+  return { uneven, neverBenched };
 }
 
 function PlanGrid({ editablePlan, positionsList, availablePlayerIds, playerName, onSwap }) {

@@ -123,3 +123,20 @@ test('generatePlan respects eligibility across the whole game and falls back gra
     if (gk) assert.equal(gk.player_id, 1);
   }
 });
+
+test('generatePlan benches everyone once before anyone sits twice', () => {
+  const availablePlayerIds = [1, 2, 3, 4, 5, 6, 7];
+  for (let run = 0; run < 20; run++) {
+    // Player 1 has the biggest season deficit-free record, which would
+    // otherwise make them the favorite to sit repeatedly.
+    const priorStats = { 1: { playedQuarters: 8, availableQuarters: 8, positionCounts: {} } };
+    const { quarters } = generatePlan({ availablePlayerIds, formationSlots: STANDARD_5V5, numQuarters: 4, priorStats });
+    const counts = {};
+    for (const q of quarters) for (const p of q.bench) counts[p] = (counts[p] || 0) + 1;
+    // 2 benched per quarter x 4 quarters = 8 slots across 7 players: at most one double.
+    const doubles = Object.values(counts).filter((c) => c >= 2).length;
+    assert.ok(doubles <= 1);
+    assert.ok(Object.values(counts).every((c) => c <= 2));
+    assert.equal(Object.keys(counts).length, 7);
+  }
+});

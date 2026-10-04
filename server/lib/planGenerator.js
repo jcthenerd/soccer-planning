@@ -1,6 +1,6 @@
 'use strict';
 
-const DEFAULT_WEIGHTS = { benchDeficit: 10, benchStreak: 3, pairing: 2, positionRepeat: 1 };
+const DEFAULT_WEIGHTS = { benchDeficit: 10, benchStreak: 3, pairing: 2, positionRepeat: 1, gameBench: 1000 };
 const MAX_EXHAUSTIVE_CANDIDATES = 200000;
 
 function combinations(items, k) {
@@ -86,7 +86,7 @@ function isEligible(playerId, positionId, eligibility) {
 // same point in every game. Pairing cost only depends on who plays together,
 // not what position they play, so this can be scored independent of the
 // (separate) position assignment step.
-function rankBenchCandidates(availablePlayerIds, benchCount, stats, pairCounts, benchStreaks, weights) {
+function rankBenchCandidates(availablePlayerIds, benchCount, stats, pairCounts, benchStreaks, weights, gameBenchCounts) {
   if (benchCount <= 0) {
     return [{ bench: [], play: availablePlayerIds.slice(), cost: 0 }];
   }
@@ -99,7 +99,7 @@ function rankBenchCandidates(availablePlayerIds, benchCount, stats, pairCounts, 
   const k = enumerateBenchDirectly ? benchCount : playCount;
 
   if (binomialCoefficient(availablePlayerIds.length, k) === Infinity) {
-    return greedyBenchCandidate(availablePlayerIds, benchCount, stats, benchStreaks);
+    return greedyBenchCandidate(availablePlayerIds, benchCount, stats, benchStreaks, gameBenchCounts);
   }
 
   const combos = combinations(availablePlayerIds, k);
@@ -114,6 +114,9 @@ function rankBenchCandidates(availablePlayerIds, benchCount, stats, pairCounts, 
       const deficit = 1 - playRate(stats[p]);
       cost += weights.benchDeficit * deficit * deficit;
       cost += weights.benchStreak * (benchStreaks[p] || 0);
+      // Dominant term: nobody sits a second time in this game until everyone
+      // has sat once (and so on for third, etc.).
+      cost += weights.gameBench * (gameBenchCounts[p] || 0);
     }
     for (let i = 0; i < playSet.length; i++) {
       for (let j = i + 1; j < playSet.length; j++) {
@@ -140,8 +143,10 @@ function rankBenchCandidates(availablePlayerIds, benchCount, stats, pairCounts, 
 // Fallback for rosters too large to enumerate exhaustively: bench whoever
 // currently has the highest play rate (least deficit), tie-broken by who has
 // sat out least recently.
-function greedyBenchCandidate(availablePlayerIds, benchCount, stats, benchStreaks) {
+function greedyBenchCandidate(availablePlayerIds, benchCount, stats, benchStreaks, gameBenchCounts) {
   const sorted = availablePlayerIds.slice().sort((a, b) => {
+    const gameDiff = (gameBenchCounts[a] || 0) - (gameBenchCounts[b] || 0);
+    if (gameDiff !== 0) return gameDiff;
     const rateDiff = playRate(stats[b]) - playRate(stats[a]);
     if (Math.abs(rateDiff) > 1e-9) return rateDiff;
     return (benchStreaks[a] || 0) - (benchStreaks[b] || 0);
@@ -207,8 +212,8 @@ function findBestEffortAssignment(playerIds, slotPositionIds, eligibility, posit
   return findPositionAssignment(playerIds, slotPositionIds, {}, positionCountsByPlayer) || [];
 }
 
-function planQuarter({ availablePlayerIds, fieldSlotPositionIds, benchCount, stats, pairCounts, benchStreaks, eligibility, weights }) {
-  const candidates = rankBenchCandidates(availablePlayerIds, benchCount, stats, pairCounts, benchStreaks, weights);
+function planQuarter({ availablePlayerIds, fieldSlotPositionIds, benchCount, stats, pairCounts, benchStreaks, gameBenchCounts, eligibility, weights }) {
+  const candidates = rankBenchCandidates(availablePlayerIds, benchCount, stats, pairCounts, benchStreaks, weights, gameBenchCounts);
 
   const positionCountsByPlayer = {};
   for (const p of availablePlayerIds) positionCountsByPlayer[p] = stats[p].positionCounts;
@@ -261,6 +266,9 @@ function generatePlan(input) {
   const benchStreaks = {};
   for (const p of availablePlayerIds) benchStreaks[p] = priorBenchStreaks[p] || 0;
 
+  const gameBenchCounts = {};
+  for (const p of availablePlayerIds) gameBenchCounts[p] = 0;
+
   const quarters = [];
 
   for (let q = 1; q <= numQuarters; q++) {
@@ -276,6 +284,7 @@ function generatePlan(input) {
       stats,
       pairCounts,
       benchStreaks,
+      gameBenchCounts,
       eligibility,
       weights,
     });
@@ -286,6 +295,7 @@ function generatePlan(input) {
     }
     for (const p of bench) {
       benchStreaks[p] = (benchStreaks[p] || 0) + 1;
+      gameBenchCounts[p] += 1;
     }
     for (const { player_id, position_id } of assignment) {
       stats[player_id].positionCounts[position_id] = (stats[player_id].positionCounts[position_id] || 0) + 1;

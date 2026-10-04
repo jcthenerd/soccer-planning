@@ -302,3 +302,12 @@ button[data-action="delete"]:hover, button[data-action="remove-slot"]:hover, but
   font-size: 0.9em;
   font-weight: 600;
 }
+
+.bench-flag {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-left: 4px solid var(--series-3);
+  background: var(--field-bg);
+  color: var(--ink);
+  border-radius: 4px;
+}
